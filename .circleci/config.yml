@@ -71,6 +71,9 @@ jobs:
       - attach_workspace:
           at: docs/build
       - run:
+          name: Disable jekyll builds
+          command: touch docs/build/html/.nojekyll          
+      - run:
           name: Install and configure dependencies
           command: |
             npm install -g --silent gh-pages@2.0.1
@@ -81,7 +84,7 @@ jobs:
             - "f1:24:ba:62:13:33:f4:b4:f7:2d:82:68:cc:64:51:bf"  
       - run:
           name: Deploy docs to gh-pages branch
-          command: gh-pages --dist docs/build/html          
+          command: gh-pages --dotfiles --message "[skip ci] Updates" --dist docs/build/html         
 
 workflows:
   version: 2
