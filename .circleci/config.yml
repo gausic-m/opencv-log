@@ -60,7 +60,7 @@ jobs:
           name: Build docs
           command: cd docs/ && poetry run make html
       - persist_to_workspace:
-          root: docs/_build
+          root: docs/build
           paths: html
 
   docs-deploy:
@@ -69,7 +69,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: docs/_build
+          at: docs/build
       - run:
           name: Install and configure dependencies
           command: |
@@ -78,7 +78,7 @@ jobs:
             git config user.name "ci-build"
       - run:
           name: Deploy docs to gh-pages branch
-          command: gh-pages --dist docs/_build/html          
+          command: gh-pages --dist docs/build/html          
 
 workflows:
   version: 2
