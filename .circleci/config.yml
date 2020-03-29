@@ -32,7 +32,7 @@ jobs:
           name: Run Pytest, report coverage
           command: |
             poetry run coverage run --source=cvtest,cvlog -m pytest
-            poetry run coveralls
+          #  poetry run coveralls
 
 
   deployment:
@@ -47,14 +47,49 @@ jobs:
           command: |
             poetry publish --build --username "${PYPI_USERNAME}" --password "${PYPI_PASSWORD}" --no-interaction
 
+  docs-build:
+    docker:
+      - image: circleci/python:3.6.8
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            poetry install
+      - run:
+          name: Build docs
+          command: cd docs/ && make html
+      - persist_to_workspace:
+          root: docs/_build
+          paths: html
+
+  docs-deploy:
+    docker:
+      - image: node:8.10.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: docs/_build
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ci-build@klukas.net"
+            git config user.name "ci-build"
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: gh-pages --dist docs/_build/html          
+
 workflows:
   version: 2
 
-
   build-and-test-workflow:
     jobs:
-      - build-and-test
-  
+      - build-and-test   
+      - docs-deploy:
+          requires:
+            - docs-build
+          
   deployment-workflow:
     jobs:
 
@@ -73,3 +108,23 @@ workflows:
                 only: /v[0-9]+(\.[0-9]+)*/
               branches:
                 ignore: /.*/
+
+      - docs-build:
+          requires:
+            - deployment
+          filters:
+              tags:
+                only: /v[0-9]+(\.[0-9]+)*/
+              branches:
+                ignore: /.*/   
+
+      - docs-deploy:
+          requires:
+            - docs-build
+          filters:
+              tags:
+                only: /v[0-9]+(\.[0-9]+)*/
+              branches:
+                ignore: /.*/ 
+
+
